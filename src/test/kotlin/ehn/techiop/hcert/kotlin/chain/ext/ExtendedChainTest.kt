@@ -2,8 +2,10 @@ package ehn.techiop.hcert.kotlin.chain.ext
 
 import ehn.techiop.hcert.kotlin.chain.Chain
 import ehn.techiop.hcert.kotlin.chain.DecisionService
+import ehn.techiop.hcert.kotlin.chain.VerificationDecision
 import ehn.techiop.hcert.kotlin.chain.VerificationResult
 import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
+import ehn.techiop.hcert.kotlin.chain.toHexString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.hamcrest.CoreMatchers.equalTo
@@ -19,6 +21,7 @@ class ExtendedChainTest {
     @ParameterizedTest
     @MethodSource("inputProvider")
     fun success(input: TestInput) {
+        println("Executing test case ${input.context.description}")
         val decisionService =
             DecisionService(Clock.fixed(input.context.validationClock.toInstant(), ZoneId.systemDefault()))
         val certificateRepository = PrefilledCertificateRepository(*input.context.certList.certificates.toTypedArray())
@@ -37,9 +40,9 @@ class ExtendedChainTest {
         input.context.expectedResult.verify?.let { assertThat(verificationResult.coseVerified, equalTo(it)) }
         input.context.expectedResult.unprefix?.let { assertThat(chainResult.step4Encoded, equalTo(input.base45)) }
         input.context.expectedResult.validJson?.let { assertThat(chainResult.eudgc, equalTo(input.content)) }
-        input.context.expectedResult.base45decode?.let { assertThat(chainResult.step3Compressed, equalTo(input.cose)) }
+        input.context.expectedResult.base45decode?.let { assertThat(chainResult.step2Cose.toHexString(), equalTo(input.cose)) }
         //input.context.expectedResult.pictureDecode?.let { assertThat(chainResult.step4Encoded, equalTo(input.withPrefix)) }
-        input.context.expectedResult.expired?.let { assertThat(chainResult.step4Encoded, equalTo(input.base45)) }
+        input.context.expectedResult.expired?.let { assertThat(decision, equalTo(VerificationDecision.FAIL)) }
     }
 
     companion object {
@@ -48,7 +51,9 @@ class ExtendedChainTest {
         @Suppress("unused")
         fun inputProvider(): List<TestInput> {
             val testcaseFiles = listOf(
-                "src/test/resources/testcase01.json"
+                "src/test/resources/testcase01.json",
+                "src/test/resources/testcase02.json",
+                "src/test/resources/testcase03.json",
             )
             return testcaseFiles.map { Json.decodeFromString(File(it).bufferedReader().readText()) }
         }

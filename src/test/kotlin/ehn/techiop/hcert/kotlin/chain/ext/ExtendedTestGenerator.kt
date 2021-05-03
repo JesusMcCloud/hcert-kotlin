@@ -14,6 +14,7 @@ import ehn.techiop.hcert.kotlin.chain.impl.RandomEcKeyCryptoService
 import ehn.techiop.hcert.kotlin.chain.toHexString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.security.cert.X509Certificate
@@ -22,12 +23,13 @@ import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneId
 
+@Disabled("Don't want to generate test case files every time")
 class ExtendedTestGenerator {
 
     @Test
     fun write01Good() {
         val eudgc = ObjectMapper().readValue(SampleData.vaccination, Eudgc::class.java)
-        val clock = Clock.fixed(Instant.ofEpochSecond(1620058140), ZoneId.systemDefault())
+        val clock = Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault())
         val cryptoService = RandomEcKeyCryptoService(clock = clock)
         val chain = Chain(
             DefaultCborService(clock = clock),
@@ -38,7 +40,75 @@ class ExtendedTestGenerator {
         )
         val result = chain.encode(eudgc)
 
-        createTestCaseJson(clock, eudgc, result, listOf(cryptoService.getCertificate()), "All good", "testcase01")
+        createTestCaseJson(
+            clock, eudgc, result, listOf(cryptoService.getCertificate()),
+            "All good", "testcase01",
+            TestExpectedResults(
+                validJson = true,
+                schemaValidation = true,
+                decode = true,
+                unprefix = true,
+                base45decode = true,
+                verify = true
+            )
+        )
+    }
+
+    @Test
+    fun write02SignatureFailed() {
+        val eudgc = ObjectMapper().readValue(SampleData.vaccination, Eudgc::class.java)
+        val clock = Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault())
+        val cryptoService = RandomEcKeyCryptoService(clock = clock)
+        val chain = Chain(
+            DefaultCborService(clock = clock),
+            DefaultCoseService(RandomEcKeyCryptoService(clock = clock)),
+            DefaultContextIdentifierService(),
+            DefaultCompressorService(),
+            DefaultBase45Service()
+        )
+        val result = chain.encode(eudgc)
+
+        createTestCaseJson(
+            clock, eudgc, result, listOf(cryptoService.getCertificate()),
+            "Signature cert not in trust list", "testcase02",
+            TestExpectedResults(
+                validJson = true,
+                schemaValidation = true,
+                decode = true,
+                unprefix = true,
+                base45decode = true,
+                verify = false
+            )
+        )
+    }
+
+    @Test
+    fun write03Expired() {
+        val eudgc = ObjectMapper().readValue(SampleData.vaccination, Eudgc::class.java)
+        val clock = Clock.fixed(Instant.parse("2018-05-03T18:00:00Z"), ZoneId.systemDefault())
+        val cryptoService = RandomEcKeyCryptoService(clock = clock)
+        val chain = Chain(
+            DefaultCborService(clock = clock),
+            DefaultCoseService(cryptoService),
+            DefaultContextIdentifierService(),
+            DefaultCompressorService(),
+            DefaultBase45Service()
+        )
+        val result = chain.encode(eudgc)
+
+        createTestCaseJson(
+            Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault()),
+            eudgc, result, listOf(cryptoService.getCertificate()),
+            "Certificate expired", "testcase03",
+            TestExpectedResults(
+                validJson = true,
+                schemaValidation = true,
+                decode = true,
+                unprefix = true,
+                base45decode = true,
+                verify = true
+            )
+        )
     }
 
     private fun createTestCaseJson(
@@ -47,9 +117,9 @@ class ExtendedTestGenerator {
         result: ChainResult,
         certificateList: List<X509Certificate>,
         description: String,
-        testcaseNumber: String
+        testcaseNumber: String,
+        expectedResult: TestExpectedResults
     ) {
-        val expectedResult = TestExpectedResults(validObject = true, schemaValidation = true)
         val certList = CertificateList(certificateList)
         val context = TestContext(
             1, "1.0.0", certList, OffsetDateTime.ofInstant(clock.instant(), clock.zone),
@@ -65,7 +135,7 @@ class ExtendedTestGenerator {
             context
         )
         File("src/test/resources/$testcaseNumber.json").bufferedWriter().use {
-            it.write(Json.encodeToString(testcase))
+            it.write(Json { prettyPrint = true }.encodeToString(testcase))
         }
     }
 
