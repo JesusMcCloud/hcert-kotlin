@@ -49,7 +49,8 @@ class ExtendedTestGenerator {
                 decode = true,
                 unprefix = true,
                 base45decode = true,
-                verify = true
+                verify = true,
+                expired = false
             )
         )
     }
@@ -77,7 +78,8 @@ class ExtendedTestGenerator {
                 decode = true,
                 unprefix = true,
                 base45decode = true,
-                verify = false
+                verify = false,
+                expired = false
             )
         )
     }
@@ -106,7 +108,8 @@ class ExtendedTestGenerator {
                 decode = true,
                 unprefix = true,
                 base45decode = true,
-                verify = true
+                verify = true,
+                expired = true
             )
         )
     }

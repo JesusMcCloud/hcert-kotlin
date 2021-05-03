@@ -37,12 +37,22 @@ class ExtendedChainTest {
         //creation input.context.expectedResult.encode?.let { assertThat(verificationResult.cborDecoded, equalTo(it)) }
         input.context.expectedResult.decode?.let { assertThat(verificationResult.cborDecoded, equalTo(it)) }
         //creation input.context.expectedResult.sign?.let { assertThat(verificationResult.coseVerified, equalTo(it)) }
-        input.context.expectedResult.verify?.let { assertThat(verificationResult.coseVerified, equalTo(it)) }
+        input.context.expectedResult.verify?.let {
+            assertThat(verificationResult.coseVerified, equalTo(it))
+            if (!it) assertThat(decision, equalTo(VerificationDecision.FAIL))
+        }
         input.context.expectedResult.unprefix?.let { assertThat(chainResult.step4Encoded, equalTo(input.base45)) }
         input.context.expectedResult.validJson?.let { assertThat(chainResult.eudgc, equalTo(input.content)) }
-        input.context.expectedResult.base45decode?.let { assertThat(chainResult.step2Cose.toHexString(), equalTo(input.cose)) }
+        input.context.expectedResult.base45decode?.let {
+            assertThat(
+                chainResult.step2Cose.toHexString(),
+                equalTo(input.cose)
+            )
+        }
         //input.context.expectedResult.pictureDecode?.let { assertThat(chainResult.step4Encoded, equalTo(input.withPrefix)) }
-        input.context.expectedResult.expired?.let { assertThat(decision, equalTo(VerificationDecision.FAIL)) }
+        input.context.expectedResult.expired?.let {
+            if (it) assertThat(decision, equalTo(VerificationDecision.FAIL))
+        }
     }
 
     companion object {
