@@ -46,6 +46,21 @@ class Chain(
         return cborService.decode(cbor, verificationResult)
     }
 
+    /**
+     * Process the [input], apply decoding from [ContextIdentifierService], [Base45Service], [CompressorService], [CoseService], [CborService] (in that order).
+     * The result will contain the parsed data, as well as intermediate results.
+     *
+     * Beware that [verificationResult] will be filled with detailed information about the decoding, which shall be passed to [DecisionService] to decide on a final verdict.
+     */
+    fun decodeExtended(input: String, verificationResult: VerificationResult): ChainDecodeResult {
+        val encoded = contextIdentifierService.decode(input, verificationResult)
+        val compressed = base45Service.decode(encoded, verificationResult)
+        val cose = compressorService.decode(compressed, verificationResult)
+        val cbor = coseService.decode(cose, verificationResult)
+        val eudgc = cborService.decode(cbor, verificationResult)
+        return ChainDecodeResult(eudgc, cbor, cose, compressed, encoded)
+    }
+
     companion object {
         @JvmStatic
         fun buildCreationChain(cryptoService: CryptoService) = Chain(
