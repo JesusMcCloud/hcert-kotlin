@@ -5,11 +5,13 @@ import ehn.techiop.hcert.data.Eudgc
 import ehn.techiop.hcert.kotlin.chain.Chain
 import ehn.techiop.hcert.kotlin.chain.ChainResult
 import ehn.techiop.hcert.kotlin.chain.SampleData
+import ehn.techiop.hcert.kotlin.chain.asBase64
 import ehn.techiop.hcert.kotlin.chain.impl.DefaultBase45Service
 import ehn.techiop.hcert.kotlin.chain.impl.DefaultCborService
 import ehn.techiop.hcert.kotlin.chain.impl.DefaultCompressorService
 import ehn.techiop.hcert.kotlin.chain.impl.DefaultContextIdentifierService
 import ehn.techiop.hcert.kotlin.chain.impl.DefaultCoseService
+import ehn.techiop.hcert.kotlin.chain.impl.DefaultTwoDimCodeService
 import ehn.techiop.hcert.kotlin.chain.impl.RandomEcKeyCryptoService
 import ehn.techiop.hcert.kotlin.chain.toHexString
 import kotlinx.serialization.encodeToString
@@ -41,15 +43,16 @@ class ExtendedTestGenerator {
         val result = chain.encode(eudgc)
 
         createTestCaseJson(
-            clock, eudgc, result, listOf(cryptoService.getCertificate()),
+            clock, eudgc, result, cryptoService.getCertificate(),
             "All good", "testcase01",
             TestExpectedResults(
-                validJson = true,
-                schemaValidation = true,
-                decode = true,
-                unprefix = true,
-                base45decode = true,
-                verify = true,
+                verifyQrDecode = true,
+                verifyPrefix = true,
+                verifyBase45Decode = true,
+                verifyCoseSignature = true,
+                verifyCborDecode = true,
+                verifyJson = true,
+                verifySchemaValidation = true,
                 expired = false
             )
         )
@@ -70,15 +73,16 @@ class ExtendedTestGenerator {
         val result = chain.encode(eudgc)
 
         createTestCaseJson(
-            clock, eudgc, result, listOf(cryptoService.getCertificate()),
+            clock, eudgc, result, cryptoService.getCertificate(),
             "Signature cert not in trust list", "testcase02",
             TestExpectedResults(
-                validJson = true,
-                schemaValidation = true,
-                decode = true,
-                unprefix = true,
-                base45decode = true,
-                verify = false,
+                verifyQrDecode = true,
+                verifyPrefix = true,
+                verifyBase45Decode = true,
+                verifyCoseSignature = false,
+                verifyCborDecode = true,
+                verifyJson = true,
+                verifySchemaValidation = true,
                 expired = false
             )
         )
@@ -100,15 +104,16 @@ class ExtendedTestGenerator {
 
         createTestCaseJson(
             Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault()),
-            eudgc, result, listOf(cryptoService.getCertificate()),
+            eudgc, result, cryptoService.getCertificate(),
             "Certificate expired", "testcase03",
             TestExpectedResults(
-                validJson = true,
-                schemaValidation = true,
-                decode = true,
-                unprefix = true,
-                base45decode = true,
-                verify = true,
+                verifyQrDecode = true,
+                verifyPrefix = true,
+                verifyBase45Decode = true,
+                verifyCoseSignature = true,
+                verifyCborDecode = true,
+                verifyJson = true,
+                verifySchemaValidation = true,
                 expired = true
             )
         )
@@ -118,24 +123,28 @@ class ExtendedTestGenerator {
         clock: Clock,
         eudgc: Eudgc,
         result: ChainResult,
-        certificateList: List<X509Certificate>,
+        certificate: X509Certificate,
         description: String,
         testcaseNumber: String,
         expectedResult: TestExpectedResults
     ) {
-        val certList = CertificateList(certificateList)
         val context = TestContext(
-            1, "1.0.0", certList, OffsetDateTime.ofInstant(clock.instant(), clock.zone),
-            description, expectedResult
+            1,
+            "1.0.0",
+            certificate,
+            OffsetDateTime.ofInstant(clock.instant(), clock.zone),
+            description
         )
-        val testcase = TestInput(
+        val qrCode = DefaultTwoDimCodeService(350).encode(result.step5Prefixed).asBase64()
+        val testcase = TestCase(
             eudgc,
             result.step1Cbor.toHexString(),
             result.step2Cose.toHexString(),
             result.step4Encoded,
             result.step5Prefixed,
-            null,
-            context
+            qrCode,
+            context,
+            expectedResult
         )
         File("src/test/resources/$testcaseNumber.json").bufferedWriter().use {
             it.write(Json { prettyPrint = true }.encodeToString(testcase))

@@ -39,11 +39,7 @@ class Chain(
      * Beware that [verificationResult] will be filled with detailed information about the decoding, which shall be passed to [DecisionService] to decide on a final verdict.
      */
     fun decode(input: String, verificationResult: VerificationResult): Eudgc {
-        val encoded = contextIdentifierService.decode(input, verificationResult)
-        val compressed = base45Service.decode(encoded, verificationResult)
-        val cose = compressorService.decode(compressed, verificationResult)
-        val cbor = coseService.decode(cose, verificationResult)
-        return cborService.decode(cbor, verificationResult)
+        return decodeExtended(input, verificationResult).eudgc
     }
 
     /**

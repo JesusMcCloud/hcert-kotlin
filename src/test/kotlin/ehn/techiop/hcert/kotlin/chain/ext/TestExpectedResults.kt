@@ -6,25 +6,23 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TestExpectedResults(
     @SerialName("EXPECTEDVALIDOBJECT")
-    val validObject: Boolean? = null,
+    val validObjectForGeneration: Boolean? = null,
     @SerialName("EXPECTEDSCHEMAVALIDATION")
-    val schemaValidation: Boolean? = null,
+    val verifySchemaValidation: Boolean? = null,
     @SerialName("EXPECTEDENCODE")
-    val encode: Boolean? = null,
+    val encodeForGeneration: Boolean? = null,
     @SerialName("EXPECTEDDECODE")
-    val decode: Boolean? = null,
-    @SerialName("EXPECTEDSIGN")
-    val sign: Boolean? = null,
+    val verifyCborDecode: Boolean? = null,
     @SerialName("EXPECTEDVERIFY")
-    val verify: Boolean? = null,
+    val verifyCoseSignature: Boolean? = null,
     @SerialName("EXPECTEDUNPREFIX")
-    val unprefix: Boolean? = null,
+    val verifyPrefix: Boolean? = null,
     @SerialName("EXPECTEDVALIDJSON")
-    val validJson: Boolean? = null,
+    val verifyJson: Boolean? = null,
     @SerialName("EXPECTEDB45DECODE")
-    val base45decode: Boolean? = null,
+    val verifyBase45Decode: Boolean? = null,
     @SerialName("EXPECTEDPICTUREDECODE")
-    val pictureDecode: Boolean? = null,
+    val verifyQrDecode: Boolean? = null,
     @SerialName("EXPTECTEDEXPIRED")
-    val expired: Boolean? = null
+    val expired: Boolean? = null // TODO when true, then expects an error, on other fields in expects success
 )

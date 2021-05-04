@@ -6,20 +6,22 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TestInput(
+data class TestCase(
     @SerialName("JSON")
     @Serializable(with = EudgcSerializer::class)
-    val content: Eudgc? = null,
+    val eudgc: Eudgc? = null,
     @SerialName("CBOR")
-    val cbor: String? = null,
+    val cborHex: String? = null,
     @SerialName("COSE")
-    val cose: String? = null,
+    val coseHex: String? = null,
     @SerialName("BASE45")
     val base45: String? = null,
     @SerialName("PREFIX")
-    val withPrefix: String? = null,
+    val base45WithPrefix: String? = null,
     @SerialName("2DCODE")
-    val encodedQrCode: String? = null,
+    val qrCodePng: String? = null,
     @SerialName("TESTCTX")
-    val context: TestContext
+    val context: TestContext,
+    @SerialName("EXPECTEDRESULTS")
+    val expectedResult: TestExpectedResults,
 )
