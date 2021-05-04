@@ -29,6 +29,99 @@ import java.time.ZoneId
 class ExtendedTestGenerator {
 
     @Test
+    fun writeGen01Vaccination() {
+        val eudgc = ObjectMapper().readValue(SampleData.vaccination, Eudgc::class.java)
+        val clock = Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault())
+        val cryptoService = RandomEcKeyCryptoService(clock = clock)
+        val chain = Chain(
+            // TODO Would also need to specify validity, country code!
+            DefaultCborService(clock = clock),
+            DefaultCoseService(cryptoService),
+            DefaultContextIdentifierService(),
+            DefaultCompressorService(),
+            DefaultBase45Service()
+        )
+        val result = chain.encode(eudgc)
+
+        createGenerationTestCaseJson(
+            clock, eudgc, result, "Success, vaccination", "gentestcase01",
+            TestExpectedResults(
+                verifySchemaGeneration = true,
+                verifyEncodeGeneration = true,
+            )
+        )
+    }
+
+    @Test
+    fun writeGen02Recovery() {
+        val eudgc = ObjectMapper().readValue(SampleData.recovery, Eudgc::class.java)
+        val clock = Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault())
+        val cryptoService = RandomEcKeyCryptoService(clock = clock)
+        val chain = Chain(
+            DefaultCborService(clock = clock),
+            DefaultCoseService(cryptoService),
+            DefaultContextIdentifierService(),
+            DefaultCompressorService(),
+            DefaultBase45Service()
+        )
+        val result = chain.encode(eudgc)
+
+        createGenerationTestCaseJson(
+            clock, eudgc, result, "Success, recovery", "gentestcase02",
+            TestExpectedResults(
+                verifySchemaGeneration = true,
+                verifyEncodeGeneration = true,
+            )
+        )
+    }
+
+    @Test
+    fun writeGen03TestNaa() {
+        val eudgc = ObjectMapper().readValue(SampleData.testNaa, Eudgc::class.java)
+        val clock = Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault())
+        val cryptoService = RandomEcKeyCryptoService(clock = clock)
+        val chain = Chain(
+            DefaultCborService(clock = clock),
+            DefaultCoseService(cryptoService),
+            DefaultContextIdentifierService(),
+            DefaultCompressorService(),
+            DefaultBase45Service()
+        )
+        val result = chain.encode(eudgc)
+
+        createGenerationTestCaseJson(
+            clock, eudgc, result, "Success, test NAA", "gentestcase03",
+            TestExpectedResults(
+                verifySchemaGeneration = true,
+                verifyEncodeGeneration = true,
+            )
+        )
+    }
+
+    @Test
+    fun writeGen04TestRat() {
+        val eudgc = ObjectMapper().readValue(SampleData.testRat, Eudgc::class.java)
+        val clock = Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault())
+        val cryptoService = RandomEcKeyCryptoService(clock = clock)
+        val chain = Chain(
+            DefaultCborService(clock = clock),
+            DefaultCoseService(cryptoService),
+            DefaultContextIdentifierService(),
+            DefaultCompressorService(),
+            DefaultBase45Service()
+        )
+        val result = chain.encode(eudgc)
+
+        createGenerationTestCaseJson(
+            clock, eudgc, result, "Success, test RAT", "gentestcase04",
+            TestExpectedResults(
+                verifySchemaGeneration = true,
+                verifyEncodeGeneration = true,
+            )
+        )
+    }
+
+    @Test
     fun write01Good() {
         val eudgc = ObjectMapper().readValue(SampleData.vaccination, Eudgc::class.java)
         val clock = Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault())
@@ -42,7 +135,7 @@ class ExtendedTestGenerator {
         )
         val result = chain.encode(eudgc)
 
-        createTestCaseJson(
+        createVerificationTestCaseJson(
             clock, eudgc, result, cryptoService.getCertificate(),
             "All good", "testcase01",
             TestExpectedResults(
@@ -72,7 +165,7 @@ class ExtendedTestGenerator {
         )
         val result = chain.encode(eudgc)
 
-        createTestCaseJson(
+        createVerificationTestCaseJson(
             clock, eudgc, result, cryptoService.getCertificate(),
             "Signature cert not in trust list", "testcase02",
             TestExpectedResults(
@@ -102,7 +195,7 @@ class ExtendedTestGenerator {
         )
         val result = chain.encode(eudgc)
 
-        createTestCaseJson(
+        createVerificationTestCaseJson(
             Clock.fixed(Instant.parse("2021-05-03T18:00:00Z"), ZoneId.systemDefault()),
             eudgc, result, cryptoService.getCertificate(),
             "Certificate expired", "testcase03",
@@ -119,7 +212,7 @@ class ExtendedTestGenerator {
         )
     }
 
-    private fun createTestCaseJson(
+    private fun createVerificationTestCaseJson(
         clock: Clock,
         eudgc: Eudgc,
         result: ChainResult,
@@ -143,6 +236,36 @@ class ExtendedTestGenerator {
             result.step4Encoded,
             result.step5Prefixed,
             qrCode,
+            context,
+            expectedResult
+        )
+        File("src/test/resources/$testcaseNumber.json").bufferedWriter().use {
+            it.write(Json { prettyPrint = true }.encodeToString(testcase))
+        }
+    }
+
+    private fun createGenerationTestCaseJson(
+        clock: Clock,
+        eudgc: Eudgc,
+        result: ChainResult,
+        description: String,
+        testcaseNumber: String,
+        expectedResult: TestExpectedResults
+    ) {
+        val context = TestContext(
+            1,
+            "1.0.0",
+            null,
+            OffsetDateTime.ofInstant(clock.instant(), clock.zone),
+            description
+        )
+        val testcase = TestCase(
+            eudgc,
+            result.step1Cbor.toHexString(),
+            null,
+            null,
+            null,
+            null,
             context,
             expectedResult
         )

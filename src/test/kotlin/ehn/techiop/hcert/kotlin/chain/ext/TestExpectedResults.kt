@@ -6,11 +6,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TestExpectedResults(
     @SerialName("EXPECTEDVALIDOBJECT")
-    val validObjectForGeneration: Boolean? = null,
+    val verifySchemaGeneration: Boolean? = null,
     @SerialName("EXPECTEDSCHEMAVALIDATION")
     val verifySchemaValidation: Boolean? = null,
     @SerialName("EXPECTEDENCODE")
-    val encodeForGeneration: Boolean? = null,
+    val verifyEncodeGeneration: Boolean? = null,
     @SerialName("EXPECTEDDECODE")
     val verifyCborDecode: Boolean? = null,
     @SerialName("EXPECTEDVERIFY")
