@@ -29,7 +29,7 @@ class ExtendedTestRunner {
     @ParameterizedTest
     @MethodSource("verificationProvider")
     fun verification(case: TestCase) {
-        println("Executing verification test case ${case.context.description}")
+        println("Executing verification test case \"${case.context.description}\"")
         val clock = case.context.validationClock?.let {
             Clock.fixed(it.toInstant(), ZoneId.systemDefault())
         } ?: Clock.systemDefaultZone()
@@ -39,7 +39,14 @@ class ExtendedTestRunner {
         val verificationResult = VerificationResult()
         val decodingChain = Chain.buildVerificationChain(certificateRepository)
         val qrCodeContent = if (case.qrCodePng != null) {
-            DefaultTwoDimCodeService(350).decode(case.qrCodePng.fromBase64())
+            try {
+                DefaultTwoDimCodeService(350).decode(case.qrCodePng.fromBase64())
+            } catch (e: Exception) {
+                case.expectedResult.verifyQrDecode?.let {
+                    if (it) throw e
+                }
+                case.qrCodePng
+            }
         } else {
             case.base45WithPrefix
         } ?: throw IllegalArgumentException("Input")
@@ -48,14 +55,21 @@ class ExtendedTestRunner {
         val decision = decisionService.decide(verificationResult)
 
         case.expectedResult.verifyQrDecode?.let {
-            assertThat(qrCodeContent, equalTo(case.base45WithPrefix))
+            if (it) assertThat(qrCodeContent, equalTo(case.base45WithPrefix))
+            if (!it) assertThat(decision, equalTo(VerificationDecision.FAIL))
         }
         case.expectedResult.verifyPrefix?.let {
-            assertThat(chainResult.step4Encoded, equalTo(case.base45))
+            if (it) assertThat(chainResult.step4Encoded, equalTo(case.base45))
+            if (!it) assertThat(decision, equalTo(VerificationDecision.FAIL))
         }
         case.expectedResult.verifyBase45Decode?.let {
             assertThat(verificationResult.base45Decoded, equalTo(it))
-            assertThat(chainResult.step2Cose.toHexString(), equalTo(case.coseHex))
+            if (it) assertThat(chainResult.step3Compressed.toHexString(), equalTo(case.compressedHex))
+            if (!it) assertThat(decision, equalTo(VerificationDecision.FAIL))
+        }
+        case.expectedResult.verifyCompression?.let {
+            assertThat(verificationResult.zlibDecoded, equalTo(it))
+            if (it) assertThat(chainResult.step2Cose.toHexString(), equalTo(case.coseHex))
         }
         case.expectedResult.verifyCoseSignature?.let {
             assertThat(verificationResult.coseVerified, equalTo(it))
@@ -64,13 +78,16 @@ class ExtendedTestRunner {
         case.expectedResult.verifyCborDecode?.let {
             assertThat(chainResult.step1Cbor.toHexString(), equalTo(case.cborHex))
             assertThat(verificationResult.cborDecoded, equalTo(it))
+            if (!it) assertThat(decision, equalTo(VerificationDecision.FAIL))
         }
         case.expectedResult.verifyJson?.let {
             assertThat(chainResult.eudgc, equalTo(case.eudgc))
+            if (!it) assertThat(decision, equalTo(VerificationDecision.FAIL))
         }
         // TODO Implement schema validation
         case.expectedResult.verifySchemaValidation?.let {
             assertThat(verificationResult.cborDecoded, equalTo(it))
+            if (!it) assertThat(decision, equalTo(VerificationDecision.FAIL))
         }
         case.expectedResult.expired?.let {
             if (it) assertThat(decision, equalTo(VerificationDecision.FAIL))
@@ -80,7 +97,7 @@ class ExtendedTestRunner {
     @ParameterizedTest
     @MethodSource("generationProvider")
     fun generation(case: TestCase) {
-        println("Executing generation test case ${case.context.description}")
+        println("Executing generation test case \"${case.context.description}\"")
         if (case.eudgc == null) throw IllegalArgumentException("eudgc")
         val clock = case.context.validationClock?.let {
             Clock.fixed(it.toInstant(), ZoneId.systemDefault())
@@ -112,6 +129,12 @@ class ExtendedTestRunner {
                 "src/test/resources/testcase01.json",
                 "src/test/resources/testcase02.json",
                 "src/test/resources/testcase03.json",
+                "src/test/resources/testcaseQ1.json",
+                "src/test/resources/testcaseH1.json",
+                "src/test/resources/testcaseH2.json",
+                "src/test/resources/testcaseB1.json",
+                "src/test/resources/testcaseZ1.json",
+                "src/test/resources/testcaseZ2.json",
             )
             return testcaseFiles.map { Json.decodeFromString(File(it).bufferedReader().readText()) }
         }

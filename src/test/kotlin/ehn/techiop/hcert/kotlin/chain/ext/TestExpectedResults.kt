@@ -19,10 +19,12 @@ data class TestExpectedResults(
     val verifyPrefix: Boolean? = null,
     @SerialName("EXPECTEDVALIDJSON")
     val verifyJson: Boolean? = null,
+    @SerialName("EXPECTEDCOMPRESSION")
+    val verifyCompression: Boolean? = null, // TODO new property
     @SerialName("EXPECTEDB45DECODE")
     val verifyBase45Decode: Boolean? = null,
     @SerialName("EXPECTEDPICTUREDECODE")
     val verifyQrDecode: Boolean? = null,
     @SerialName("EXPTECTEDEXPIRED")
-    val expired: Boolean? = null // TODO when true, then expects an error, on other fields in expects success
+    val expired: Boolean? = null // TODO when true, then expect an error, but other fields expect success when set
 )
