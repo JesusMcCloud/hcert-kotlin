@@ -38,6 +38,7 @@ actual fun selfSignCertificate(
     commonName: String,
     privateKey: PrivKey<*>,
     publicKey: PubKey<*>,
+    keySize: Int,
     contentType: List<ContentType>,
     clock: Clock
 ): Certificate<*> {
@@ -67,7 +68,7 @@ actual fun selfSignCertificate(
 
     val jwk = object : JsonWebKey {
         override var alg: String? = "EC"
-        override var crv: String? = "P-256"
+        override var crv: String? = if (keySize == 384) "P-384" else "P-256"
         override var kty: String? = "EC"
         override var x: String? = urlSafe((publicKey as JsEcPubKey).xCoord.toString("base64"))
         override var y: String? = urlSafe((publicKey as JsEcPubKey).yCoord.toString("base64"))

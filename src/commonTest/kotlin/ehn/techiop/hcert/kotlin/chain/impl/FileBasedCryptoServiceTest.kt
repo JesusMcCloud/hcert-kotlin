@@ -10,7 +10,7 @@ import kotlin.random.Random
 
 class FileBasedCryptoServiceTest : StringSpec({
 
-    "goodEcKey" {
+    "importEc256Key" {
         val pemEncodedPrivateKey = "-----BEGIN PRIVATE KEY-----\n" +
                 "ME0CAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEMzAxAgEBBCCOpgFH1YNIU9vzJWH0\n" +
                 "DkR7lDM2LZWvzlfsTi3t5yjXA6AKBggqhkjOPQMBBw==\n" +
@@ -32,15 +32,23 @@ class FileBasedCryptoServiceTest : StringSpec({
         verify(service)
     }
 
-    "newEcKey" {
-        val service = RandomEcKeyCryptoService()
+    "newEc256Key" {
+        val service = RandomEcKeyCryptoService(256)
         service.exportPrivateKeyAsPem() shouldNotBe null
         service.exportCertificateAsPem() shouldNotBe null
 
         verify(service)
     }
 
-    "goodRsaKey" {
+    "newEc384Key" {
+        val service = RandomEcKeyCryptoService(384)
+        service.exportPrivateKeyAsPem() shouldNotBe null
+        service.exportCertificateAsPem() shouldNotBe null
+
+        verify(service)
+    }
+
+    "importRsa2048Key" {
         val pemEncodedPrivateKey = "-----BEGIN PRIVATE KEY-----\n" +
                 "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCEoba3OQUobgqB\n" +
                 "4bTBnlYgqBP2kxjfmLfyaScYBYDSrEyFE7hIZr1WipyNg5QT2g7KJmdY5EbF8s0M\n" +
