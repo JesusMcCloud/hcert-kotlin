@@ -104,7 +104,7 @@ class JsRsaPrivKey(val p: ArrayBuffer) : RsaPrivKey<dynamic> {
  */
 class JsCertificate(val pemEncodedCertificate: String) : Certificate<dynamic> {
 
-    val encoded: ByteArray = pemEncodedCertificate
+    override val encoded: ByteArray = pemEncodedCertificate
         .replace("-----BEGIN CERTIFICATE-----", "")
         .replace("-----END CERTIFICATE-----", "")
         .replace("\n", "")
