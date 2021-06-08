@@ -11,7 +11,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
-class SimpleChainTest : FunSpec({
+class SimpleChainJvmTest : FunSpec({
 
     withData(
         TestInput(SampleData.testRat, ContentType.TEST, true),
