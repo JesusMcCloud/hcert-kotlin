@@ -1,8 +1,6 @@
 package ehn.techiop.hcert.kotlin.chain
 
 import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
-import ehn.techiop.hcert.kotlin.chain.impl.RandomEcKeyCryptoService
-import ehn.techiop.hcert.kotlin.chain.impl.RandomRsaKeyCryptoService
 import ehn.techiop.hcert.kotlin.crypto.KeyType
 import ehn.techiop.hcert.kotlin.data.GreenCertificate
 import ehn.techiop.hcert.kotlin.trust.ContentType
@@ -46,10 +44,7 @@ class ContentTypeChainTest : DescribeSpec({
     )
 
     withData(nameFn = { "${it.contentType} ${it.keyType}${it.keySize}" }, listOfInput) { input ->
-        val service = if (input.keyType == KeyType.EC)
-            RandomEcKeyCryptoService(input.keySize, listOf(input.contentType))
-        else
-            RandomRsaKeyCryptoService(input.keySize, listOf(input.contentType))
+        val service = CryptoServiceHolder.getRandomCryptoService(input.keyType, input.keySize)
         val dataInput = Json.decodeFromString<GreenCertificate>(input.data)
         val encodingChain = DefaultChain.buildCreationChain(service)
         val certificateRepository = PrefilledCertificateRepository(service.getCertificate())

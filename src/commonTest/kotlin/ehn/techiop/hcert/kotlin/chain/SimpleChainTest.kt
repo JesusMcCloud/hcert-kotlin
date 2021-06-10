@@ -1,8 +1,6 @@
 package ehn.techiop.hcert.kotlin.chain
 
 import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
-import ehn.techiop.hcert.kotlin.chain.impl.RandomEcKeyCryptoService
-import ehn.techiop.hcert.kotlin.chain.impl.RandomRsaKeyCryptoService
 import ehn.techiop.hcert.kotlin.crypto.KeyType
 import ehn.techiop.hcert.kotlin.data.GreenCertificate
 import io.kotest.core.spec.style.DescribeSpec
@@ -39,10 +37,7 @@ class SimpleChainTest : DescribeSpec({
     )
 
     withData(nameFn = { "${it.keyType}${it.keySize}" }, listOfInput) { input ->
-        val service = if (input.keyType == KeyType.EC)
-            RandomEcKeyCryptoService(input.keySize)
-        else
-            RandomRsaKeyCryptoService(input.keySize)
+        val service = CryptoServiceHolder.getRandomCryptoService(input.keyType, input.keySize)
         val dataInput = Json.decodeFromString<GreenCertificate>(input.data)
         val encodingChain = DefaultChain.buildCreationChain(service)
         val certificateRepository = PrefilledCertificateRepository(service.getCertificate())
