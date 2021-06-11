@@ -2,6 +2,7 @@ package ehn.techiop.hcert.kotlin.chain
 
 import ehn.techiop.hcert.kotlin.data.GreenCertificate
 import ehn.techiop.hcert.kotlin.log.antilog
+import ehn.techiop.hcert.kotlin.log.globalLogLevel
 import io.github.aakira.napier.Napier
 import kotlin.js.JsName
 
@@ -19,10 +20,7 @@ class Chain(
     private val base45Service: Base45Service,
     private val schemaValidationService: SchemaValidationService
 ) {
-
-    init {
-        Napier.base(antilog("Chain${hashCode()}"))
-    }
+    private val logTag = "Chain${hashCode()}"
 
     /**
      * Process the [input], apply encoding in this order:
@@ -77,10 +75,12 @@ class Chain(
             schemaValidationService.validate(cbor, verificationResult)
             eudgc = cborService.decode(cbor, verificationResult)
         } catch (t: Throwable) {
-            Napier.w(t.message ?: "Decode Chain error")
-            Napier.v(t.message ?: "Decode Chain error", t)
+            Napier.w(
+                message = t.message ?: "Decode Chain error",
+                throwable = if (globalLogLevel == Napier.Level.VERBOSE) t else null,
+                tag = logTag
+            )
         }
-
 
         val chainDecodeResult = ChainDecodeResult(eudgc, cbor, cwt, cose, compressed, encoded)
         return DecodeResult(verificationResult, chainDecodeResult)

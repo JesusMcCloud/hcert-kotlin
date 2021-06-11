@@ -12,11 +12,16 @@ import java.util.regex.Pattern
 import io.github.aakira.napier.Antilog
 import io.github.aakira.napier.Napier
 
+//based on default JVM debug Antilog
 internal actual fun antilog(defaultTag: String?) = object : Antilog() {
     private val handler: List<Handler> = listOf()
 
     private val CALL_STACK_INDEX = 8
 
+    init {
+        //prevent double logging
+        Logger.getLogger(this::class.java.name).useParentHandlers = false
+    }
 
     val consoleHandler: ConsoleHandler = ConsoleHandler().apply {
         level = Level.ALL
@@ -47,8 +52,9 @@ internal actual fun antilog(defaultTag: String?) = object : Antilog() {
     )
 
     override fun performLog(priority: Napier.Level, tag: String?, throwable: Throwable?, message: String?) {
-
-        val debugTag = tag ?: performTag(defaultTag?:"")
+        if (tag != null && defaultTag != null && tag != defaultTag)
+            return
+        val debugTag = tag ?: performTag(defaultTag ?: "")
 
         val fullMessage = if (message != null) {
             if (throwable != null) {
@@ -73,7 +79,7 @@ internal actual fun antilog(defaultTag: String?) = object : Antilog() {
 
 
     internal fun buildLog(priority: Napier.Level, tag: String?, message: String?): String {
-        return "${tagMap[priority]} ${tag ?: performTag(defaultTag?:"")} - $message"
+        return "${tag ?: performTag(defaultTag ?: "")} - $message"
     }
 
     private fun performTag(defaultTag: String): String {
@@ -98,13 +104,13 @@ internal actual fun antilog(defaultTag: String?) = object : Antilog() {
     }
 
     private val Throwable.stackTraceString
-    get(): String {
-    // DO NOT replace this with Log.getStackTraceString() - it hides UnknownHostException, which is
-    // not what we want.
-    val sw = StringWriter(256)
-    val pw = PrintWriter(sw, false)
-    printStackTrace(pw)
-    pw.flush()
-    return sw.toString()
-}
+        get(): String {
+            // DO NOT replace this with Log.getStackTraceString() - it hides UnknownHostException, which is
+            // not what we want.
+            val sw = StringWriter(256)
+            val pw = PrintWriter(sw, false)
+            printStackTrace(pw)
+            pw.flush()
+            return sw.toString()
+        }
 }
