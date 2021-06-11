@@ -4,6 +4,8 @@ object Versions {
     const val datetime = "0.2.1"
     const val kotest = "4.6.0"
     const val licenseReport = "1.16"
+    const val logging = "2.0.8"
+
     val jvm = Jvm
     val js = Js
 
