@@ -16,6 +16,7 @@ internal actual fun antilog(defaultTag: String?) = object : Antilog() {
     val consoleHandler: ConsoleHandler = ConsoleHandler().apply {
         level = Level.ALL
         formatter = SimpleFormatter()
+
     }
 
     private val logger: Logger = Logger.getLogger(this::class.java.name).apply {
@@ -63,7 +64,13 @@ internal actual fun antilog(defaultTag: String?) = object : Antilog() {
 
 
     private fun buildLog(tag: String?, message: String?): String {
-        return "${tag ?: performTag(defaultTag ?: "")} - $message"
+        val src = try {
+            Thread.currentThread().stackTrace.drop(4)
+                .firstOrNull { !it.className.startsWith("io.github.aakira.napier") } ?: "Antilog"
+        } catch (t: Throwable) {
+            "Antilog"
+        }
+        return "$src\n\t${tag ?: performTag(defaultTag ?: "")} - $message"
     }
 
     private fun performTag(defaultTag: String): String {
